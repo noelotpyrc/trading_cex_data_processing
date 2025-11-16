@@ -12,13 +12,21 @@ trading_cex_data_processing/
 │   ├── targets.py                   # Target generation (returns, MFE/MAE, barriers)
 │   ├── utils.py                     # Lookback utilities, resampling
 │   └── hmm_features.py              # HMM-based features
-├── scripts/                  # Build scripts (run these)
-│   ├── build_lookbacks.py
-│   ├── build_current_bar_lag_features.py
-│   ├── build_multi_timeframe_features.py
-│   ├── build_targets.py
-│   ├── build_hmm_v1_features_csv.py
-│   └── build_hmm_v2_features_csv.py
+├── scripts/                  # Scripts
+│   ├── backfill_features.py         # ⭐ Backfill features to DuckDB (production)
+│   ├── test_backfill_e2e.py         # E2E test for features
+│   ├── build_lookbacks.py           # Batch: Build lookbacks CSV
+│   ├── build_current_bar_lag_features.py  # Batch: Current bar features
+│   ├── build_multi_timeframe_features.py  # Batch: Multi-TF features
+│   ├── build_targets.py             # Batch: Target generation
+│   ├── build_hmm_v1_features_csv.py # Batch: HMM v1 features
+│   └── build_hmm_v2_features_csv.py # Batch: HMM v2 features
+├── runtime/                  # Incremental/runtime utilities
+│   ├── data_loader.py        # Load OHLCV from DuckDB
+│   ├── lookbacks_builder.py  # Build lookback windows
+│   └── features_builder.py   # Compute features from lookbacks
+├── docs/                     # Documentation
+│   ├── backfill_features_usage.md   # Feature backfill guide
 └── tests/                    # Unit tests
 ```
 
@@ -38,6 +46,32 @@ pip install -r requirements.txt
 ```
 
 ## Usage
+
+### Production Backfill Scripts (Recommended)
+
+For production use with DuckDB databases, use the backfill scripts:
+
+#### 1. Backfill Features
+
+Compute features incrementally from OHLCV data in DuckDB:
+
+```bash
+python scripts/backfill_features.py \
+  --duckdb "/path/to/ohlcv.duckdb" \
+  --feat-duckdb "/path/to/features.duckdb" \
+  --table ohlcv_btcusdt_1h \
+  --feature-key "manual_backfill" \
+  --mode last_from_features \
+  --base-hours 720 \
+  --feature-list "/path/to/feature_list.json"
+```
+
+**Output:** Features stored as JSON in DuckDB `features` table
+- See [docs/backfill_features_usage.md](docs/backfill_features_usage.md) for details
+
+### Batch Processing Scripts (CSV-based)
+
+For batch processing with CSV files:
 
 ### 1. Build lookbacks (once per dataset)
 
