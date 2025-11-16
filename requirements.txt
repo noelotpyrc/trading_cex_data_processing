@@ -6,6 +6,9 @@ scipy>=1.9.0
 # Database (for runtime incremental features)
 duckdb>=0.9.0
 
+# Model inference
+lightgbm>=3.3.0
+
 # Optional: for HMM features
 hmmlearn>=0.3.2
 
