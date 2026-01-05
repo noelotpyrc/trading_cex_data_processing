@@ -344,12 +344,11 @@ def _feature_exists(con: duckdb.DuckDBPyConnection, table_name: str, feature_key
         return False
 
 
-def _last_features_ts(con: duckdb.DuckDBPyConnection, table_name: str, feature_key: str) -> Optional[pd.Timestamp]:
-    """Get last timestamp for feature_key."""
+def _last_features_ts(con: duckdb.DuckDBPyConnection, table_name: str) -> Optional[pd.Timestamp]:
+    """Get last timestamp in table (ignoring feature_key)."""
     try:
         row = con.execute(
-            f"SELECT MAX(ts) FROM {table_name} WHERE feature_key = ?",
-            [feature_key]
+            f"SELECT MAX(ts) FROM {table_name}"
         ).fetchone()
         if row and row[0] is not None:
             return pd.Timestamp(row[0])
@@ -427,7 +426,8 @@ def select_target_timestamps(cfg: BackfillDerivedFeaturesConfig,
         return sorted([t for t in ts_list if t in available_ts and t <= cutoff])
     
     if cfg.mode == "last_from_features":
-        last_ts = _last_features_ts(con_feat, cfg.table_name, cfg.feature_key)
+        # Use only timestamp to determine resume point (ignore feature_key)
+        last_ts = _last_features_ts(con_feat, cfg.table_name)
         end_ts = pd.to_datetime(cfg.end).tz_localize(None) if cfg.end else cutoff
         start_ts = (last_ts + pd.Timedelta(hours=1)) if last_ts else (end_ts - pd.Timedelta(hours=48))
         return sorted([t for t in available_ts if start_ts <= t <= end_ts])
