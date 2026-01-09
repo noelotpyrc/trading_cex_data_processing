@@ -611,3 +611,32 @@ def oi_volume_efficiency_signed(oi: pd.Series, volume: pd.Series,
     
     return eff_pos, eff_neg
 # try ratio_window as 48 and 168, norm_window as 168
+
+# =============================================================================
+# LONG-TERM TREND FLAGS
+# =============================================================================
+
+def is_above_daily_ema(
+    timestamp: pd.Series,
+    close: pd.Series,
+    span_days: int,
+) -> pd.Series:
+    """
+    Binary flag: 1 if current close is above the lagged daily EMA, 0 otherwise.
+    
+    Uses daily_ema_lagged() which shifts by 1 day to prevent look-ahead bias.
+    At any hour of Day T, the EMA is computed from daily closes up to Day T-1.
+    
+    Args:
+        timestamp: Timestamp series (1H frequency)
+        close: Close price series (1H frequency)
+        span_days: EMA span in days (e.g., 30, 180, 365)
+    
+    Returns:
+        pd.Series: Binary flag (1 = above EMA, 0 = below or equal)
+    """
+    from feature_engineering.primitives import daily_ema_lagged
+    
+    ema_values = daily_ema_lagged(timestamp, close, span_days)
+    return (close > ema_values).astype(int)
+# use span_days 30, 180, 365
